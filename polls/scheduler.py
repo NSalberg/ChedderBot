@@ -7,6 +7,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from decouple import config
 import sqlite3
+import schedule
 
 ACCOUNT_SID = config('ACCOUNT_SID')
 AUTH_TOKEN = config('AUTH_TOKEN')
@@ -66,21 +67,6 @@ def get_dates():
         dates.append(date)
     return dates
 
-def schule(dates : list):
-    times = []
-    for date in dates:
-        date += " 10:00:00"
-        date = datetime.strptime(date, "%b %d %Y %H:%M:%S")
-        date += timedelta(days=1)
-        times.append(date.timestamp())
-
-    s = sched.scheduler(time.monotonic, time.sleep)
-    
-    for t in times:
-        if t > time.monotonic(): 
-            s.enterabs(t, 1, text_threes)
-    s.run()
-
 def text_threes():
     game_log = get_gamelog(url)
     num_threes = int(game_log[:,11][-1])
@@ -90,8 +76,10 @@ def text_threes():
     
     for number in numbers:
         if num_threes >= 13:
+            print("sending text")
             send_text("The Timberwolves have made " + str(num_threes) + " threes in their last game. A free Beef 'N Chedder is available at Arby's today.", number[0])
         else:
+            print("sending text", number[0])
             send_text("The Timberwolves have made " + str(num_threes) + " threes in their last game. No free Beef 'N Chedder today.", number[0])
     
 def send_text(text: str, number: str):
@@ -102,6 +90,17 @@ def send_text(text: str, number: str):
         to=number
     )
 
+def man(times):
+    for t in times:
+        if datetime.now().year == t.year and datetime.now().month == t.month and datetime.now().day == t.day:
+            text_threes()
+
 if __name__ == "__main__":
     dates = get_dates()
-    schule(dates)
+    times = []
+    for date in dates:
+        date += " 10:00:00"
+        date = datetime.strptime(date, "%b %d %Y %H:%M:%S")
+        date += timedelta(days=1)
+        times.append(date)
+    man(times)
